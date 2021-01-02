@@ -25,6 +25,11 @@ class FaceMaskAppEngine:
             from libs.classifiers.edgetpu.classifier import Classifier
             self.detector = Detector(self.config)
             self.classifier_model = Classifier(self.config)
+        elif self.device == "Jetson":
+            from libs.detectors.jetson.detector import Detector
+            from libs.classifiers.jetson.classifier import Classifier
+            self.detector = Detector(self.config)
+            self.classifier_model = Classifier(self.config)
         else:
             raise ValueError('Not supported device named: ', self.device)
 

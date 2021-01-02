@@ -81,7 +81,27 @@ class Detector:
                     x_max_face = int(min(self.w, x_min_face + 1 * h_crop))
                     y_max_face = int(min(self.h, y_min_face + 1 * h_crop))
                     bbox_dict["bbox"] = [y_min_face / self.h, x_min_face / self.w, y_max_face / self.h, x_max_face / self.w]
+            else: 
+                x_min_head = self.w
+                y_min_head = self.h
+                x_max_head = 0
+                y_max_head = 0
+                for i in range(6):
+                    if pred[i,0] > 0.0:
+                        x_min_head = min(x_min_head, pred[i,0])
+                    if pred[i,1] > 0.0:
+                        y_min_head = min(y_min_head, pred[i,1])
+                    x_max_head = max(x_max_head, pred[i,0])
+                    y_max_head = max(y_max_head, pred[i,1])
+                    h_crop = y_max_head - y_min_head
+                if ( x_min_head != self.w and x_max_head != 0 and y_min_head != self.h and y_max_head != 0 and x_min_head != x_max_head and y_min_head != y_max_head ):
+                    x_min_head = int(max(0, x_min_head - 0.2 * h_crop))
+                    y_min_head = int(max(0, y_min_head - 0.4 * h_crop))
+                    x_max_head = int(min(self.w, x_max_head + 1 * h_crop))
+                    y_max_head = int(min(self.h, y_max_head + 0.8 * h_crop))
 
+                    bbox_dict["bbox_head"] = [y_min_head / self.h, x_min_head / self.w, y_max_head / self.h, x_max_head / self.w]
+ 
             result.append(bbox_dict)
 
         return result

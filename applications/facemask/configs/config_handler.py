@@ -33,11 +33,15 @@ class Config:
         self.CLASSIFIER_NAME = self._config["classifier"]["name"]
         self.CLASSIFIER_MODEL_PATH = self._config["classifier"]["model_path"]
         self.CLASSIFIER_INPUT_SIZE = self._config["classifier"]["input_size"]
-
+        self.CLASSIFIER_TENSORRT_PRECISION = None
+        if "tensorrt_precision" in self._config["classifier"]:
+            self.CLASSIFIER_TENSORRT_PRECISION = self._config["classifier"]["tensorrt_precision"]
         self.DETECTOR_NAME = self._config["detector"]["name"]
         self.DETECTOR_MODEL_PATH = self._config["detector"]["model_path"]
         self.DETECTOR_INPUT_SIZE = self._config["detector"]["input_size"]
-
+        self.DETECTOR_TENSORRT_PRECISION = None
+        if "tensorrt_precision" in self._config["detector"]:
+            self.DETECTOR_TENSORRT_PRECISION = self._config["detector"]["tensorrt_precision"]
         self.DEVICE = self._config["app"]["device"]
         self.APP_VIDEO_PATH = self._config["app"]["video_path"]
         self.APP_VIDEO_RESOLUTION = self._config["app"]["resolution"]

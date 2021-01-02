@@ -48,6 +48,9 @@ def main():
     elif device == "EdgeTPU":
         from libs.detectors.edgetpu.detector import Detector
         from libs.classifiers.edgetpu.classifier import Classifier
+    elif device == "Jetson":
+        from libs.detectors.jetson.detector import Detector
+        from libs.classifiers.jetson.classifier import Classifier
     else:
         raise ValueError('Not supported device named: ', device)
 
@@ -65,6 +68,7 @@ def main():
             objects_list = detector.inference(rgb_resized_image)
             faces = []
             cordinates = []
+            cordinates_head = []
             for obj in objects_list:
                 if 'bbox' in obj.keys():
                     face_bbox = obj['bbox']  # [ymin, xmin, ymax, xmax]
@@ -79,7 +83,12 @@ def main():
                     croped_face = croped_face / 255.0
                     faces.append(croped_face)
                     cordinates.append([int(xmin), int(ymin), int(xmax), int(ymax)])
-
+                if 'bbox_head' in obj.keys():
+                    head_bbox = obj['bbox_head']  # [ymin, xmin, ymax, xmax]
+                    xmin, xmax = np.multiply([head_bbox[1], head_bbox[3]], width)
+                    ymin, ymax = np.multiply([head_bbox[0], head_bbox[2]], height)
+                    cordinates_head.append([int(xmin), int(ymin), int(xmax), int(ymax)])
+            
             faces = np.array(faces)
             if np.shape(faces)[0] == 0:
                 print("can not find face at ".image_path)
@@ -95,6 +104,8 @@ def main():
                     color = (0, 0, 0)
 
                 cv.rectangle(raw_img, (cor[0], cor[1]), (cor[2], cor[3]), color, 2)
+            for cor in cordinates_head:
+                cv.rectangle(raw_img, (cor[0], cor[1]), (cor[2], cor[3]), (200,200,200), 2)
             cv.imwrite(os.path.join(output_dir, filename), raw_img)
             print('image "{}" are processed. {} fps'.format(image_path, detector.fps))
         else:

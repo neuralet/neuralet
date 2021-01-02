@@ -29,15 +29,17 @@
   "classifier": {
     "name": "OFMClassifier",
     "model_path": "",
-    "input_size": 45
+    "input_size": 45,
+    "tensorrt_precision": 16
   },
   "detector": {
-    "name": "open_pifpaf_jetson",
+    "name": "openpifpaf_tensorrt",
     "model_path": "",
-    "input_size": [257,193]
+    "input_size": [321,193],
+    "tensorrt_precision": 16
   },
   "app": {
-    "device": "Jetson-tx2",
+    "device": "Jetson",
     "video_path": "data/sample2.mov",
     "resolution": [320, 320],
     "host": "0.0.0.0",
