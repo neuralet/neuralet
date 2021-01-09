@@ -1,7 +1,9 @@
 import abc
+import copy
 import os
 import logging
 import cv2 as cv
+import numpy as np
 from lxml import etree
 
 
@@ -9,6 +11,7 @@ class TeacherMetaArch(object):
     """
     base class of teacher models
     """
+
     def __init__(self, config):
         self.config = config
         self.min_detection = int(self.config.get_section_dict('Teacher')['MinDetectionPerFrame'])
@@ -20,6 +23,14 @@ class TeacherMetaArch(object):
         # try catch on filling image path and xml path
         self.image_path = self.config.get_section_dict('Teacher')['ImagePath']
         self.xml_path = self.config.get_section_dict('Teacher')['XmlPath']
+        self.postprocessing_method = self.config.get_section_dict('Teacher')['PostProcessing']
+        # weather or not using background filtering in postprocessing step
+        self.background_filter = True if self.postprocessing_method == "background_filter" else False
+        if self.background_filter:
+            self.background_subtractor = cv.createBackgroundSubtractorMOG2()
+        self.image_features = self.config.get_section_dict('Teacher')['ImageFeature']
+        self.class_id = int(self.config.get_section_dict('Teacher')['ClassID'])
+        self.score_threshold = float(self.config.get_section_dict('Teacher')['MinScore'])
         if not os.path.exists(self.image_path):
             os.makedirs(self.image_path)
         if not os.path.exists(self.xml_path):
@@ -28,13 +39,37 @@ class TeacherMetaArch(object):
 
     @abc.abstractmethod
     def inference(self, preprocessed_image):
+        self.frame = preprocessed_image
         raise NotImplementedError
 
     def postprocessing(self, raw_results):
         """
-        override this method for custom postprocessing and filtering.
+        omit large boxes and boxes that detected as background by background subtractor.
+        Args:
+        raw_results: list of dictionaries, output of the inference method
+        Returns:
+        a filter version of raw_results
         """
-        return raw_results
+        post_processed_results = copy.copy(raw_results)
+        if self.background_filter:
+            self.foreground_mask = self.background_subtractor.apply(self.frame)
+            self.foreground_mask = cv.threshold(self.foreground_mask, 128, 255, cv.THRESH_BINARY)[1] / 255
+        for bbox in raw_results:
+            # delete large boxes
+            if (bbox["bbox"][2] - bbox["bbox"][0]) * (bbox["bbox"][3] - bbox["bbox"][1]) > 0.2:
+                post_processed_results.remove(bbox)
+                continue
+            # delete background boxes
+            if self.background_filter:
+                x_min = max(0, int(bbox["bbox"][0] * self.image_size[0]))
+                y_min = max(0, int(bbox["bbox"][1] * self.image_size[1]))
+                x_max = min(self.image_size[0] - 1, int(bbox["bbox"][2] * self.image_size[0]))
+                y_max = min(self.image_size[1] - 1, int(bbox["bbox"][3] * self.image_size[1]))
+                bbox_mask_window = self.foreground_mask[y_min:y_max, x_min:x_max]
+                foreground_portion = bbox_mask_window.sum() / bbox_mask_window.size
+                if foreground_portion < .07:
+                    post_processed_results.remove(bbox)
+        return post_processed_results
 
     @property
     def name(self):
@@ -115,5 +150,32 @@ class TeacherMetaArch(object):
             image: input frame
             image_info: a dictionary contains image size and name.
         """
+        if self.image_features == "foreground_mask":
+            image[..., 0] = (self.foreground_mask * 255).astype(int)
+        elif self.image_features == "optical_flow_magnitude":
+            if image_info["name"] == "0":
+                self.prvs = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+                image[..., 0] = np.zeros((self.image_size[1], self.image_size[0]))
+            else:
+                next_frame = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+                flow = cv.calcOpticalFlowFarneback(self.prvs, next_frame, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+                mag, ang = cv.cartToPolar(flow[..., 0], flow[..., 1])
+                image[..., 0] = cv.normalize(mag, None, 0, 255, cv.NORM_MINMAX)
+                self.prvs = next_frame
+
+        elif self.image_features == "foreground_mask && optical_flow_magnitude":
+            if image_info["name"] == "0":
+                self.prvs = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+                image[..., 0] = self.prvs
+                image[..., 1] = np.zeros((self.image_size[1], self.image_size[0]))
+                image[..., 2] = (self.foreground_mask * 255).astype(int)
+            else:
+                next_frame = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+                flow = cv.calcOpticalFlowFarneback(self.prvs, next_frame, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+                mag, ang = cv.cartToPolar(flow[..., 0], flow[..., 1])
+                image[..., 0] = next_frame
+                image[..., 1] = cv.normalize(mag, None, 0, 255, cv.NORM_MINMAX)
+                image[..., 2] = (self.foreground_mask * 255).astype(int)
+                self.prvs = next_frame
 
         cv.imwrite(os.path.join(self.image_path, image_info["name"] + ".jpg"), image)

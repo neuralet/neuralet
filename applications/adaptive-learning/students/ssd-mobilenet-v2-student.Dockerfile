@@ -27,5 +27,5 @@ RUN echo 'export PYTHONPATH=$PYTHONPATH:/models/research:/models/research/slim' 
     source ~/.bashrc
 
 WORKDIR /repo/applications/adaptive-learning/students
-ENTRYPOINT ["bash", "./train_student.sh"]
-CMD ["-c", "/repo/applications/adaptive-learning/configs/iterdet.ini"]
+
+CMD bash ./train_student.sh -c $ADAPTIVE_LEARNING_CONFIG

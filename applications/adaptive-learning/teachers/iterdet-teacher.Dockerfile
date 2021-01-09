@@ -27,5 +27,4 @@ WORKDIR /repo/applications/adaptive-learning/teachers
 RUN pip install --upgrade pip setuptools==41.0.0 && pip install opencv-python wget scipy image lxml
 
 
-ENTRYPOINT ["python", "teacher_main.py"]
-CMD ["--config", "/repo/applications/adaptive-learning/configs/iterdet.ini"]
+CMD python teacher_main.py --config $ADAPTIVE_LEARNING_CONFIG

@@ -3,7 +3,7 @@ services:
   teacher:
     build:
       context: ./teachers/
-      dockerfile: iterdet-teacher.Dockerfile
+      dockerfile: faster-rcnn-nas-teacher.Dockerfile
     stdin_open: true
     tty: true
     container_name: teacher-container
@@ -13,6 +13,8 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=0
+      - TF_FORCE_GPU_ALLOW_GROWTH=true
+      - ADAPTIVE_LEARNING_CONFIG=/repo/applications/adaptive-learning/configs/faster_rcnn_nas.ini
 
   student:
     build:
@@ -30,3 +32,4 @@ services:
       - NVIDIA_VISIBLE_DEVICES=0
       - PYTHONPATH=$PYTHONPATH:/models/research:/models/research/slim
       - TF_FORCE_GPU_ALLOW_GROWTH=true
+      - ADAPTIVE_LEARNING_CONFIG=/repo/applications/adaptive-learning/configs/faster_rcnn_nas.ini

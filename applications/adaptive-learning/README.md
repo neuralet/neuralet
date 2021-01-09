@@ -31,7 +31,7 @@ there is a brief explanation on each parameter of config files in the following 
 
 | Parameter    | Options | Comments                                                                                                                          |
 | ------------ | ------- | -------- |
-| Teacher/Name     | iterdet     | name of the teacher model. (in case of implementation of new teacher you should register its name in `teachers/model_builder.py`)     |
+| Teacher/Name     | iterdet/faster_rcnn_nas     | name of the teacher model. (in case of implementation of new teacher you should register its name in `teachers/model_builder.py`)     |
 | Teacher/ImageSize | 300,300,3 (or any other appropriate image size) | the input image size of the teacher model |
 | Teacher/ClassID | integer | The pedestrian class ID of the Teacher. (this parameter is important only where the teacher model is a multiple class object detector.) |
 | Teacher/MinScore | a float number between 0 and 1 | the teacher model threshold for detecting an object |
@@ -53,12 +53,16 @@ there is a brief explanation on each parameter of config files in the following 
 
 After configuring the config file, you just need to run following command to start the Adaptive Learning:
 ```
-docker-compose up
+# For running with IterDet teacher:
+docker-compose -f docker-compose-iterdet.yml up
+
+# For running with Faster RCNN NAS teacher:
+docker-compose -f docker-compose-faster-rcnn-nas.yml up
 ```
 After the training rounds completed you can find the final student model under: `data/student_model/frozen_graph/`
 
 ### Tracking Training Process
-In the `docker-compose.yml` file, you can forward the 6006 port (tensorboard port) of the student's container to one of your machine's open ports. then browse this port in the browser to track and monitor training with tensorboard.
+In the `docker-compose.yml` file, you can forward the 6006 port (tensorboard port) of the student's container to one of your machine's open ports (default port is 2029). then browse this port in the browser to track and monitor training with tensorboard.
 
 ### Defining Your Own Teacher Model.
-You can add your own teacher model to the Adaptive Learning framework by writing a class which is a subclass of `TeacherMetaArcht` class and implement `inference` method. please check out the `teachers/teacher_meta_arch.py` and `teachers/iterdet.py` for more information.
+You can add your own teacher model to the Adaptive Learning framework by writing a class which is a subclass of `TeacherMetaArcht` class and implement `inference` method. please check out the `teachers/teacher_meta_arch.py` and `teachers/iterdet.py` for more information. Note that you should register your model in `teachers/model_builder.py` too.
