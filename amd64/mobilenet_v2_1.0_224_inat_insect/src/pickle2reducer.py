@@ -1,5 +1,6 @@
 from multiprocessing.reduction import ForkingPickler, AbstractReducer
 
+
 class ForkingPickler2(ForkingPickler):
     def __init__(self, *args):
         if len(args) > 1:
