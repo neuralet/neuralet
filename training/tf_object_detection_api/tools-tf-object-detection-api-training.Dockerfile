@@ -11,7 +11,8 @@ RUN pip install Cython && \
     pip install jupyter && \
     pip install matplotlib
 
-RUN git clone --depth 1 https://github.com/tensorflow/models.git
+RUN git clone https://github.com/tensorflow/models.git && cd models && \
+    git checkout 02c7112eb7ff0aed28d8d508708b3fb3a9c9c01f && cd ../
 
 RUN git clone --depth 1 https://github.com/cocodataset/cocoapi.git && \
     cd cocoapi/PythonAPI && \
